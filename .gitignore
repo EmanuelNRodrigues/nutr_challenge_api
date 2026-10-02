@@ -34,8 +34,8 @@
 
 # RubyMine
 .idea/
-# RBS generated files
-rbs_collection/
-/.gem_rbs_collection/
-tmp/*
 
+# RBS
+.rbs_collection/
+.gem_rbs_collection/
+rbs_collection/
