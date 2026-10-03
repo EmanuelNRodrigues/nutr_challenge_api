@@ -36,5 +36,6 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "byebug"
   gem "rubocop-rails-omakase", require: false # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
+  gem "annotate"
 end
 

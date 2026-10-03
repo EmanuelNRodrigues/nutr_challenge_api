@@ -1,0 +1,1 @@
+EMAIL_REGEX = /\A(.+)@(.+)\z/.freeze
