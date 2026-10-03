@@ -15,7 +15,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_03_093001) do
   enable_extension "plpgsql"
 
   create_table "appointments", force: :cascade do |t|
-    t.datetime "scheduled_date_time", null: false
+    t.datetime "start_date_time", null: false
+    t.datetime "end_date_time", null: false
     t.integer "status", default: 0, null: false
     t.bigint "guest_id", null: false
     t.bigint "nutritionist_service_id", null: false
