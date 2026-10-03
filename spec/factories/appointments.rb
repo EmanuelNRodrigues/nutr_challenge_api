@@ -12,9 +12,9 @@
 #
 FactoryBot.define do
   factory :appointment do
-    scheduled_date_time { "2026-10-03 09:19:29" }
-    status { "MyString" }
-    guest_id { nil }
-    nutritionist_service { nil }
+    scheduled_date_time { Time.now + 1.day }
+    status { 'pending' }
+    guest
+    nutritionist_service
   end
 end

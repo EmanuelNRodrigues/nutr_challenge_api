@@ -16,20 +16,19 @@ class Appointment < ApplicationRecord
 
   enum status: { pending: 0, approved: 1, rejected: 2, canceled: 3 }
 
-  validates :status, presence: true, inclusion: { in: statuses.keys }
-  validate :validate_scheduled_date_time, on: :save
+  validate :scheduled_date_time_must_be_in_the_future, on: :create
 
 
   private
 
-  def validate_scheduled_date_time
+  def scheduled_date_time_must_be_in_the_future
     unless scheduled_date_time.present?
       errors.add(:scheduled_date_time, "can't be blank")
       return
     end
 
-    if scheduled_date_time < Time.current
-      errors.add(:scheduled_date_time, "can't be in the past")
+    if scheduled_date_time_changed? && scheduled_date_time < Time.current
+      errors.add(:scheduled_date_time, "can't be in the past") if scheduled_date_time < Time.current
     end
   end
 end

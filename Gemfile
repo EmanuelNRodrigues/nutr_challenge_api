@@ -34,8 +34,8 @@ gem "sidekiq"
 group :development, :test do
   gem "rspec-rails", "~> 8.0"
   gem "factory_bot_rails"
+  gem 'faker' # Creates fake data for testing
   gem "byebug"
   gem "rubocop-rails-omakase", require: false # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "annotate"
 end
-

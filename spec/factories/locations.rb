@@ -9,7 +9,6 @@
 #
 FactoryBot.define do
   factory :location do
-    address { "MyString" }
-    service { nil }
+    address { Faker::Address.full_address }
   end
 end

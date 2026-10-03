@@ -10,7 +10,7 @@
 #
 FactoryBot.define do
   factory :nutritionist_service do
-    nutritionist { nil }
-    service { nil }
+    nutritionist
+    service
   end
 end
