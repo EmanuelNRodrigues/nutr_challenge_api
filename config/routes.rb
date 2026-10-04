@@ -14,12 +14,14 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :appointment, only: [:create], to: 'public/appointment#create'
+      resources :guest, only: [], to: 'public/guest' do
+        post 'appointment', to: 'public/guest#create_appointment', on: :collection
+        get 'nutritionist', to: 'public/guest#list_nutritionists_and_services', on: :collection
+      end
       resources :nutritionist, only: [:index] do
         post 'appointment/:appointment_id/accept', to: 'nutritionist#accept_appointment', on: :member
         post 'appointment/:appointment_id/reject', to: 'nutritionist#reject_appointment', on: :member
-        get 'appointments', to: 'nutritionist#appointments', on: :member
-
+        get 'pending_appointments', to: 'nutritionist#pending_appointments', on: :member
       end
     end
   end

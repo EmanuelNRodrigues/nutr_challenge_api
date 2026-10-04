@@ -13,6 +13,7 @@
 class Service < ApplicationRecord
   has_many :nutritionist_services, dependent: :destroy
   has_many :nutritionists, through: :nutritionist_services
+  has_many :appointments, through: :nutritionist_services
   belongs_to :location
 
   validates :name, presence: true
