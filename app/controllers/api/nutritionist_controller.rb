@@ -6,8 +6,10 @@ class Api::V1::NutritionistController < ApplicationController
   # Job para enviar email para o guest do appointment aceito, e para os guests do appointment aprovado, informando que o appointment foi aceito.
   # POST /api/v1/nutritionist/:id/appointment/:appointment_id/accept
   def accept_appointment
-    appointment = Appointment.joins(:nutritionist_service).where(id: params[:appointment_id],
-                                                                 nutritionist_services: { nutritionist_id: params[:id] }).first
+    appointment = Appointment.joins(:nutritionist_service)
+                             .where(id: params[:appointment_id],
+                                    nutritionist_services: { nutritionist_id: params[:id] })
+                             .first
 
     appointment.approve!(reject_same_time: true) if appointment.present?
 

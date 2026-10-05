@@ -53,7 +53,7 @@ class Appointment < ApplicationRecord
   def approve!(reject_same_time: false)
     self.status = :approved
     save!
-    # Notify the guest about the approval (e.g., send an email)
+    Email::ApprovedAppointmentNotifierJob.perform_later(self.id)
 
     if reject_same_time
       # Reject other appointments within the same time range for the same nutritionist service
@@ -67,6 +67,6 @@ class Appointment < ApplicationRecord
   def reject!
     self.status = :rejected
     save!
-    # Notify the guest about the rejection (e.g., send an email)
+    Email::RejectedAppointmentNotifierJob.perform_later(self.id)
   end
 end

@@ -45,6 +45,7 @@ class Api::V1::Public::GuestController < ApplicationController
     nutritionists = Nutritionist.joins(nutritionist_services: { service: :location })
                                 .includes(nutritionist_services: { service: :location })
                                 .select(select_fields)
+                                .limit(50)
                                 .order('locations.address DESC')
 
     if params[:name].present?
