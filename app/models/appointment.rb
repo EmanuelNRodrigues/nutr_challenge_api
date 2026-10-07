@@ -15,19 +15,62 @@ class Appointment < ApplicationRecord
   belongs_to :guest
   belongs_to :nutritionist_service
 
+  MIN_TIME_TO_SCHEDULE = 1.hour.from_now
+  MAX_TIME_TO_SCHEDULE = 3.months.from_now
+
   # Todo: Review if makes sense status to be a nil - pending, true - approved, false - rejected
   enum :status, { pending: 0, approved: 1, rejected: 2, canceled: 3 }
 
-  validate :date_times_are_correct, on: :create
+  validate :scheduled_times_are_valid, on: :create
 
-  scope :with_time_overlapping, ->(nutritionist_id, start_time, end_time) {
-    where("start_date_time < ? AND end_date_time > ?", end_time, start_time)
-      .where(nutritionist_id: nutritionist_id)
+  scope :with_time_overlapping, ->(nutritionist_id, start_date, end_date) {
+    joins(:nutritionist_service)
+      .where(nutritionist_services: { nutritionist_id: nutritionist_id })
+      .where(
+        "appointments.start_date_time < ? AND appointments.end_date_time > ?",
+        end_date,
+        start_date
+      )
   }
+
+  scope :filled_slots_for_nutritionists, ->(nutritionist_ids) {
+    joins(:nutritionist_service)
+      .where(nutritionist_services: { nutritionist_id: nutritionist_ids })
+      .where(status: :approved)
+      .where(
+        start_date_time: MIN_TIME_TO_SCHEDULE..MAX_TIME_TO_SCHEDULE
+      )
+      .order(:start_date_time)
+  }
+
+  def approve!(reject_same_time: false)
+    self.status = :approved
+    save!
+    Email::ApprovedAppointmentNotifierJob.perform_later(self.id)
+
+    if reject_same_time
+      # Reject other appointments within the same time range for the same nutritionist
+      rejected_appointments = Appointment.with_time_overlapping(self.nutritionist_service.nutritionist.id,
+                                                                self.start_date_time, self.end_date_time)
+                                         .where.not(id: self.id)
+
+      rejected_appointments.update_all(status: :rejected, updated_at: Time.current)
+
+      rejected_appointments.each do |appointment|
+        Email::RejectedAppointmentNotifierJob.perform_later(self.id)
+      end
+    end
+  end
+
+  def reject!
+    self.status = :rejected
+    save!
+    Email::RejectedAppointmentNotifierJob.perform_later(self.id)
+  end
 
   private
 
-  def date_times_are_correct
+  def scheduled_times_are_valid
     unless start_date_time.present?
       errors.add(:start_date_time, "can't be blank")
     end
@@ -37,36 +80,20 @@ class Appointment < ApplicationRecord
       return
     end
 
-    if start_date_time < Time.current
-      errors.add(:start_date_time, "can't be in the past")
+    if start_date_time < MIN_TIME_TO_SCHEDULE
+      errors.add(:start_date_time, "must be at least 1 hour from now")
     end
 
-    if end_date_time < Time.current
-      errors.add(:end_date_time, "can't be in the past")
+    if end_date_time < MIN_TIME_TO_SCHEDULE + 15.minutes
+      errors.add(:end_date_time, "must be at least 1 hour and 15 minutes from now")
     end
 
     if start_date_time >= end_date_time
       errors.add(:end_date_time, "must be after start date time")
     end
-  end
 
-  def approve!(reject_same_time: false)
-    self.status = :approved
-    save!
-    Email::ApprovedAppointmentNotifierJob.perform_later(self.id)
-
-    if reject_same_time
-      # Reject other appointments within the same time range for the same nutritionist service
-      Appointment.with_time_overlapping(self.nutritionist_service.nutritionist.id, self.start_date_time, self.end_date_time)
-                 .each do |appointment|
-        appointment.reject!
-      end
+    if start_date_time >= MAX_TIME_TO_SCHEDULE
+      errors.add(:start_date_time, "must be within 3 months from now")
     end
-  end
-
-  def reject!
-    self.status = :rejected
-    save!
-    Email::RejectedAppointmentNotifierJob.perform_later(self.id)
   end
 end

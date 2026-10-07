@@ -8,6 +8,11 @@ class CreateAppointments < ActiveRecord::Migration[7.2]
       t.references :nutritionist_service, null: false, foreign_key: true
 
       t.timestamps
+
+      # Used when checking for existing appointments for a nutritionist
+      t.index [:nutritionist_service_id, :status, :start_date_time, :end_date_time]
+      # Used when cancelling a guest's pending appointments
+      t.index [:guest_id, :status]
     end
   end
 end

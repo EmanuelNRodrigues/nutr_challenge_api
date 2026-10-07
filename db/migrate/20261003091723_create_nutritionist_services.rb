@@ -5,6 +5,7 @@ class CreateNutritionistServices < ActiveRecord::Migration[7.2]
       t.references :service, null: false, foreign_key: true
 
       t.timestamps
+      t.index [:nutritionist_id, :service_id], unique: true
     end
   end
 end

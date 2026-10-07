@@ -39,3 +39,5 @@
 .rbs_collection/
 .gem_rbs_collection/
 rbs_collection/
+
+.byebug_history

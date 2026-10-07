@@ -1,81 +1,84 @@
 class Api::V1::Public::GuestController < ApplicationController
   class ScheduleAlreadyFilled < StandardError; end
 
-  before_action :validate_params
 
-  # POST /api/v1/guest
+  # POST /api/v1/guest/appointment
   def create_appointment
+    params.require([:guest_email, :guest_name, :start_appointment_date_time, :nutritionist_email, :service_name])
     # TODO: Verify return the information to the user that he has already a scheduled nutritionist if he want's to remove the old appointment to schedule the new one.
+
     nutritionist_service = NutritionistService.joins(:nutritionist, :service)
                                               .find_by!(nutritionist: {email: params[:nutritionist_email]},
                                                        service: { name: params[:service_name] } )
 
-    Nutritionist.transaction do
-      nutritionist_service.nutritionist.with_lock do
-        start_date_time = Time.zone.parse(params[:start_appointment_date_time])
-        end_date_time = start_date_time + nutritionist_service.service.duration_in_minutes.minutes
+    AppointmentCreator.new(nutritionist_service,
+                           params[:guest_name],
+                           params[:guest_email],
+                           params[:start_appointment_date_time]).call
 
-        raise ScheduleAlreadyFilled if is_schedule_already_filled?(nutritionist_service, start_date_time, end_date_time)
+    render json: { message: "Appointment scheduled successfully" }, status: :created
 
-        guest = Guest.find_or_initialize_by(email: params[:guest_email])
-        Appointment.where(guest:, status: :pending).update_all(status: :canceled) if guest.persisted?
-
-        guest.update!(name: params[:guest_name]) if guest.name != params[:guest_name]
-        Appointment.create!(guest:, nutritionist_service:,
-                            start_date_time: ,
-                            end_date_time: ,
-                            status: :pending)
-      end
-    end
-
-    render json: { message: 'Appointment scheduled successfully'}, status: :ok
-
-    rescue ScheduleAlreadyFilled
-      render json: { message: 'Scheduled time was already filled' }, status: :bad_request
+    rescue AppointmentCreator::ScheduleAlreadyFilled
+      render json: { message: 'Scheduled time was already filled' }, status: :conflict
   end
 
   # listagem de nutricionistas, servicos associados e horarios disponiveis.
   # filtrar opcionalmente por nome do nutricionista, nome do servico, localizacao do servico
-  # GET /api/v1/appointment/nutritionist_service
+  # GET /api/v1/guest/nutritionist_service
   def list_nutritionists_and_services
-    select_fields = <<~SQL
-      nutritionists.*, services.name AS service_name, services.price AS service_price,
-      services.duration_in_minutes AS service_duration, locations.address AS location_address
-    SQL
-    nutritionists = Nutritionist.joins(nutritionist_services: { service: :location })
-                                .includes(nutritionist_services: { service: :location })
-                                .select(select_fields)
-                                .limit(50)
-                                .order('locations.address DESC')
+    nutritionists = Nutritionist
+                      .includes(nutritionist_services: { service: :location })
+                      .order(:name)
+                      .limit(50)
 
-    if params[:name].present?
-      nutritionists = nutritionists.where('nutritionists.name ILIKE ?', "%#{params[:name]}%")
+    if params[:query].present?
+      nutritionists = nutritionists.where(id: filtered_nutritionist_ids)
     end
+    filled_slots_by_nutritionist = FilledSlotsFinder.new(nutritionists.pluck(:id)).call
 
-    if params[:service_name].present?
-      nutritionists = nutritionists.where('services.name ILIKE ?', "%#{params[:service_name]}%")
-    end
-
-    if params[:location_address].present?
-      nutritionists = nutritionists.where('locations.address ILIKE ?', "%#{params[:location_address]}%")
-    end
-
-    render json: nutritionists.as_json, status: :ok
+    render json: nutritionists.map { |nutritionist| serialize_nutritionist(nutritionist, filled_slots_by_nutritionist) },
+           status: :ok
   end
 
 
 
   private
 
-  def validate_params
-    params.require([:guest_email, :guest_name, :start_appointment_date_time, :nutritionist_email, :service_name])
+  def filtered_nutritionist_ids
+    return nil unless params[:query].present?
+
+    query = "%#{ActiveRecord::Base.sanitize_sql_like(params[:query])}%"
+
+    Nutritionist
+      .joins(nutritionist_services: :service)
+      .includes(nutritionist_services: { service: :location })
+      .where(
+        "nutritionists.name ILIKE :query OR services.name ILIKE :query",
+        query:
+      )
+      .distinct
+      .select(:id)
   end
 
-  def is_schedule_already_filled?(nutritionist_service, start_date, end_date)
-    # TODO: Index to increase performance? WE could add nutritionist to create a index nutrititionist start_date_time conditional by status approved and the index nutritionist end_date_time. Could it be nutritionist start_date_time end_date_time?
-    Appointment.joins(:nutritionist_service)
-               .with_time_overlapping(nutritionist_service.nutritionist_id, start_date, end_date)
-               .where(status: :approved)
-               .exists?
+  def serialize_nutritionist(nutritionist, filled_slots)
+    {
+      id: nutritionist.id,
+      name: nutritionist.name,
+      email: nutritionist.email,
+      services: nutritionist.nutritionist_services.map do |nutritionist_service|
+        service = nutritionist_service.service
+        location = service.location
+
+        {
+          name: service.name,
+          price: service.price,
+          duration_in_minutes: service.duration_in_minutes,
+          location: {
+            address: location.address
+          }
+        }
+      end,
+    filled_slots: filled_slots.fetch(nutritionist.id, [])
+    }
   end
 end

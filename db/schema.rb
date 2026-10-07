@@ -22,7 +22,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_03_093001) do
     t.bigint "nutritionist_service_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["guest_id", "status"], name: "index_appointments_on_guest_id_and_status"
     t.index ["guest_id"], name: "index_appointments_on_guest_id"
+    t.index ["nutritionist_service_id", "status", "start_date_time", "end_date_time"], name: "idx_on_nutritionist_service_id_status_start_date_ti_b9af78d037"
     t.index ["nutritionist_service_id"], name: "index_appointments_on_nutritionist_service_id"
   end
 
@@ -44,6 +46,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_03_093001) do
     t.bigint "service_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["nutritionist_id", "service_id"], name: "index_nutritionist_services_on_nutritionist_id_and_service_id", unique: true
     t.index ["nutritionist_id"], name: "index_nutritionist_services_on_nutritionist_id"
     t.index ["service_id"], name: "index_nutritionist_services_on_service_id"
   end
