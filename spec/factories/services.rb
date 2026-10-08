@@ -8,7 +8,6 @@
 #  duration_in_minutes :integer          not null
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
-#  location_id         :bigint
 #
 FactoryBot.define do
   factory :service do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_03_093001) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_07_215824) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -39,13 +39,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_03_093001) do
     t.string "address", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.float "latitude"
+    t.float "longitude"
+    t.index ["latitude", "longitude"], name: "index_locations_on_latitude_and_longitude"
   end
 
   create_table "nutritionist_services", force: :cascade do |t|
     t.bigint "nutritionist_id", null: false
     t.bigint "service_id", null: false
+    t.bigint "location_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_nutritionist_services_on_location_id"
     t.index ["nutritionist_id", "service_id"], name: "index_nutritionist_services_on_nutritionist_id_and_service_id", unique: true
     t.index ["nutritionist_id"], name: "index_nutritionist_services_on_nutritionist_id"
     t.index ["service_id"], name: "index_nutritionist_services_on_service_id"
@@ -64,13 +69,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_03_093001) do
     t.integer "duration_in_minutes", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "location_id"
-    t.index ["location_id"], name: "index_services_on_location_id"
   end
 
   add_foreign_key "appointments", "guests"
   add_foreign_key "appointments", "nutritionist_services"
+  add_foreign_key "nutritionist_services", "locations"
   add_foreign_key "nutritionist_services", "nutritionists"
   add_foreign_key "nutritionist_services", "services"
-  add_foreign_key "services", "locations"
 end

@@ -1,6 +1,7 @@
 class Api::V1::Public::GuestController < ApplicationController
   class ScheduleAlreadyFilled < StandardError; end
 
+  BRAGA_COORDINATES = [41.5510583, -8.4280045].freeze
 
   # POST /api/v1/guest/appointment
   def create_appointment
@@ -22,43 +23,31 @@ class Api::V1::Public::GuestController < ApplicationController
       render json: { message: 'Scheduled time was already filled' }, status: :conflict
   end
 
-  # listagem de nutricionistas, servicos associados e horarios disponiveis.
-  # filtrar opcionalmente por nome do nutricionista, nome do servico, localizacao do servico
   # GET /api/v1/guest/nutritionist_service
-  def list_nutritionists_and_services
+  def list_nutritionists_informations
+    coordinates = Geocoder.coordinates(params[:location_address]) || BRAGA_COORDINATES
+
     nutritionists = Nutritionist
-                      .includes(nutritionist_services: { service: :location })
-                      .order(:name)
-                      .limit(50)
+                      .joins(nutritionist_services: [:service, :location])
+                      .includes(nutritionist_services: [:service, :location])
+                      .distinct
 
-    if params[:query].present?
-      nutritionists = nutritionists.where(id: filtered_nutritionist_ids)
-    end
-    filled_slots_by_nutritionist = FilledSlotsFinder.new(nutritionists.pluck(:id)).call
+    nutritionists = nutritionists.where(id: filtered_nutritionist_ids) if params[:query].present?
 
-    render json: nutritionists.map { |nutritionist| serialize_nutritionist(nutritionist, filled_slots_by_nutritionist) },
-           status: :ok
+    nutritionists = NutritionistDistanceSorter
+                      .new(nutritionists, coordinates)
+                      .call(limit: 50)
+
+    filled_slots_by_nutritionist =
+      FilledSlotsFinder.new(nutritionists.map(&:id)).call
+
+    render json: nutritionists.map { |nutritionist|
+      serialize_nutritionist(nutritionist, filled_slots_by_nutritionist)
+    }, status: :ok
   end
-
-
 
   private
 
-  def filtered_nutritionist_ids
-    return nil unless params[:query].present?
-
-    query = "%#{ActiveRecord::Base.sanitize_sql_like(params[:query])}%"
-
-    Nutritionist
-      .joins(nutritionist_services: :service)
-      .includes(nutritionist_services: { service: :location })
-      .where(
-        "nutritionists.name ILIKE :query OR services.name ILIKE :query",
-        query:
-      )
-      .distinct
-      .select(:id)
-  end
 
   def serialize_nutritionist(nutritionist, filled_slots)
     {
@@ -67,9 +56,10 @@ class Api::V1::Public::GuestController < ApplicationController
       email: nutritionist.email,
       services: nutritionist.nutritionist_services.map do |nutritionist_service|
         service = nutritionist_service.service
-        location = service.location
+        location = nutritionist_service.location
 
         {
+          id: service.id,
           name: service.name,
           price: service.price,
           duration_in_minutes: service.duration_in_minutes,

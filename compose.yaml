@@ -36,6 +36,7 @@ services:
       DATABASE_USERNAME: postgres
       DATABASE_PASSWORD: postgres
       REDIS_URL: redis://redis:6379/0
+      GEOCODER_EMAIL: your-email@example.com
     depends_on:
       db:
         condition: service_healthy
@@ -56,6 +57,7 @@ services:
       DATABASE_USERNAME: postgres
       DATABASE_PASSWORD: postgres
       REDIS_URL: redis://redis:6379/0
+      GEOCODER_EMAIL: your-email@example.com
     depends_on:
       db:
         condition: service_healthy

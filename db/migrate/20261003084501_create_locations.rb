@@ -5,7 +5,5 @@ class CreateLocations < ActiveRecord::Migration[7.2]
 
       t.timestamps
     end
-
-    add_reference :services, :location, foreign_key: true
   end
 end

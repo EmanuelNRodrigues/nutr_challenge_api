@@ -5,6 +5,7 @@
 #  id              :bigint           not null, primary key
 #  nutritionist_id :bigint           not null
 #  service_id      :bigint           not null
+#  location_id     :bigint           not null
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
 #

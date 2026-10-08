@@ -16,7 +16,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :guest, only: [], to: 'public/guest' do
         post 'appointment', to: 'public/guest#create_appointment', on: :collection
-        get 'nutritionist_service', to: 'public/guest#list_nutritionists_and_services', on: :collection
+        get 'nutritionist_service', to: 'public/guest#list_nutritionists_informations', on: :collection
       end
       resources :nutritionist, only: [:index] do
         post 'appointment/:appointment_id/accept', to: 'nutritionist#accept_appointment', on: :member

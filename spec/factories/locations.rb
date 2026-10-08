@@ -6,6 +6,8 @@
 #  address    :string           not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  latitude   :float
+#  longitude  :float
 #
 FactoryBot.define do
   factory :location do
