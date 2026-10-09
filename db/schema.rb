@@ -22,9 +22,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_07_215824) do
     t.bigint "nutritionist_service_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["guest_id", "status"], name: "index_appointments_on_guest_id_and_status"
     t.index ["guest_id"], name: "index_appointments_on_guest_id"
-    t.index ["nutritionist_service_id", "status", "start_date_time", "end_date_time"], name: "idx_on_nutritionist_service_id_status_start_date_end_date_time"
+    t.index ["guest_id"], name: "index_appointments_one_pending_per_guest", unique: true, where: "(status = 0)"
+    t.index ["nutritionist_service_id", "start_date_time"], name: "index_appointments_on_service_start_approved", where: "(status = 1)"
     t.index ["nutritionist_service_id"], name: "index_appointments_on_nutritionist_service_id"
   end
 
@@ -33,6 +33,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_07_215824) do
     t.string "email", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index "lower((email)::text)", name: "index_guests_on_lower_email", unique: true
   end
 
   create_table "locations", force: :cascade do |t|
