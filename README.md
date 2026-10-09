@@ -54,13 +54,15 @@ docker compose exec web bash
 ```
 
 With this terminal you can setup the database by running:
+
 ```bash
 rails db:prepare
 ```
 
-With this terminal you can run the specs by running:
+I prepared some seeds. Just run:
+
 ```bash
-bundle exec rspec
+rails db:seed
 ```
 
 To stop the application:
@@ -85,6 +87,8 @@ Run the test suite with RSpec:
 ```bash
 bundle exec rspec
 ```
+
+Note: I decided not to do specs to be quicker in the implementation. I'm not happy about it but "feito melhor que perfeito"
 
 Add links to Swagger/OpenAPI documentation if available.
 
