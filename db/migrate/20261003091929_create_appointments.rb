@@ -9,10 +9,11 @@ class CreateAppointments < ActiveRecord::Migration[7.2]
 
       t.timestamps
 
-      # Used when checking for existing appointments for a nutritionist
-      t.index [:nutritionist_service_id, :status, :start_date_time, :end_date_time]
-      # Used when cancelling a guest's pending appointments
-      t.index [:guest_id, :status]
+      # A guest can have many appointments, but only one pending appointment.
+      t.index :guest_id, unique: true, where: "status = 0", name: "index_appointments_one_pending_per_guest"
+
+      # Used to find approved appointments for a nutritionist/service by start time.
+      t.index [:nutritionist_service_id, :start_date_time], where: "status = 1", name: "index_appointments_on_service_start_approved"
     end
   end
 end

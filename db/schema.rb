@@ -24,7 +24,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_07_215824) do
     t.datetime "updated_at", null: false
     t.index ["guest_id", "status"], name: "index_appointments_on_guest_id_and_status"
     t.index ["guest_id"], name: "index_appointments_on_guest_id"
-    t.index ["nutritionist_service_id", "status", "start_date_time", "end_date_time"], name: "idx_on_nutritionist_service_id_status_start_date_ti_b9af78d037"
+    t.index ["nutritionist_service_id", "status", "start_date_time", "end_date_time"], name: "idx_on_nutritionist_service_id_status_start_date_end_date_time"
     t.index ["nutritionist_service_id"], name: "index_appointments_on_nutritionist_service_id"
   end
 

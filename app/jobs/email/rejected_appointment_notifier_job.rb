@@ -1,7 +1,7 @@
 class Email::RejectedAppointmentNotifierJob < ApplicationJob
   queue_as :default
 
-  def perform(*args)
-    # Do something later
+  def perform(appointment_id)
+    # Logic to build and send email
   end
 end

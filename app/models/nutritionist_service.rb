@@ -14,4 +14,6 @@ class NutritionistService < ApplicationRecord
   belongs_to :service
   belongs_to :location
   has_many :appointments, dependent: :destroy
+
+  validates :service_id, uniqueness: { scope: :nutritionist_id }
 end

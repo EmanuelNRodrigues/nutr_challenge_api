@@ -12,6 +12,8 @@
 #  updated_at              :datetime         not null
 #
 class Appointment < ApplicationRecord
+  class InvalidTransitionError < StandardError; end
+
   belongs_to :guest
   belongs_to :nutritionist_service
 
@@ -42,31 +44,6 @@ class Appointment < ApplicationRecord
       )
       .order(:start_date_time)
   }
-
-  def approve!(reject_same_time: false)
-    self.status = :approved
-    save!
-    Email::ApprovedAppointmentNotifierJob.perform_later(self.id)
-
-    if reject_same_time
-      # Reject other appointments within the same time range for the same nutritionist
-      rejected_appointments = Appointment.with_time_overlapping(self.nutritionist_service.nutritionist.id,
-                                                                self.start_date_time, self.end_date_time)
-                                         .where.not(id: self.id)
-
-      rejected_appointments.update_all(status: :rejected, updated_at: Time.current)
-
-      rejected_appointments.each do |appointment|
-        Email::RejectedAppointmentNotifierJob.perform_later(self.id)
-      end
-    end
-  end
-
-  def reject!
-    self.status = :rejected
-    save!
-    Email::RejectedAppointmentNotifierJob.perform_later(self.id)
-  end
 
   private
 

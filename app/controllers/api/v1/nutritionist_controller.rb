@@ -1,47 +1,49 @@
 class Api::V1::NutritionistController < ApplicationController
 
-  # Mudar o status do appointment para accepted.
-  # Job? Verificar outros appointments do mesmo nutricionista para o mesmo periodo overlap, e passar estes a rejected.
-  # Job para enviar email para o guest do appointment aceito, e para os guests dos appointments rejeitados, informando que o appointment foi rejeitado.
-  # Job para enviar email para o guest do appointment aceito, e para os guests do appointment aprovado, informando que o appointment foi aceito.
   # POST /api/v1/nutritionist/:id/appointment/:appointment_id/accept
   def accept_appointment
-    appointment = Appointment.joins(:nutritionist_service)
-                             .where(id: params[:appointment_id],
-                                    nutritionist_services: { nutritionist_id: params[:id] })
-                             .first
+    AppointmentApprover.new(params[:appointment_id]).call
 
-    appointment.approve!(reject_same_time: true) if appointment.present?
-
-    render json: { message: 'Appointment accepted and overlapping appointments rejected.' }, status: :ok
+    render json: { message: 'Appointment accepted.' }, status: :ok
   end
 
-  # Mudar o status do appointment para rejected.
-  # Job para enviar email para o guest do appointment rejeitado, informando que o appointment foi rejeitado.
   # POST /api/v1/nutritionist/:id/appointment/:appointment_id/reject
   def reject_appointment
-    appointment = Appointment.joins(:nutritionist_service).where(id: params[:appointment_id],
-                                                                 nutritionist_services: { nutritionist_id: params[:id] }).first
-
-    appointment.reject! if appointment.present?
+    AppointmentRejector.new(params[:appointment_id]).call
 
     render json: { message: 'Appointment rejected.' }, status: :ok
   end
 
-  # Devolver a lista de appointments do nutricionista, com status pending
-  # Adicionar info do guest e do servico
+  def fetch_appointment
+    Appointment.joins(:nutritionist_service)
+               .find_by!( id: params[:appointment_id],
+                          nutritionist_services: { nutritionist_id: params[:id] } )
+  end
   # GET /api/v1/nutritionist/:id/pending_appointments
   def pending_appointments
     appointments = Appointment.joins(nutritionist_service: :service)
                               .where(nutritionist_services: { nutritionist_id: params[:id] }, status: :pending)
-                              .includes(:guest, nutritionist_service: :service)
-                              .select(<<~SQL)
-      appointments.*, guests.name AS guest_name, guests.email AS guest_email,
-      services.name AS service_name, services.price AS service_price,
-      services.duration_in_minutes AS service_duration
-    SQL
+                              .preload(:guest, nutritionist_service: :service)
 
-    render json: appointments.as_json, status: :ok
+    render json: serialize_appointments(appointments), status: :ok
   end
 
+  private
+
+  def serialize_appointments(appointments)
+    appointments.map do |appointment|
+      {
+        id: appointment.id,
+        start_date_time: appointment.start_date_time,
+        end_date_time: appointment.end_date_time,
+        guest_id: appointment.guest_id,
+        nutritionist_service_id: appointment.nutritionist_service_id,
+        guest_name: appointment.guest.name,
+        guest_email: appointment.guest.email,
+        service_name: appointment.nutritionist_service.service.name,
+        service_price: appointment.nutritionist_service.service.price,
+        service_duration: appointment.nutritionist_service.service.duration_in_minutes
+      }
+    end
+  end
 end

@@ -1,6 +1,4 @@
 class Api::V1::Public::GuestController < ApplicationController
-  class ScheduleAlreadyFilled < StandardError; end
-
   BRAGA_COORDINATES = [41.5510583, -8.4280045].freeze
 
   # POST /api/v1/guest/appointment
@@ -25,36 +23,30 @@ class Api::V1::Public::GuestController < ApplicationController
 
   # GET /api/v1/guest/nutritionist_service
   def list_nutritionists_informations
-    coordinates = Geocoder.coordinates(params[:location_address]) || BRAGA_COORDINATES
+    results = NutritionistServiceListing.new(
+      query: params[:query],
+      location_address: params[:location_address]
+    ).call
 
-    nutritionists = Nutritionist
-                      .joins(nutritionist_services: [:service, :location])
-                      .includes(nutritionist_services: [:service, :location])
-                      .distinct
+    serialized_results = results.map do |result|
+      serialize_nutritionists_information(
+        result[:nutritionist],
+        result[:nutritionist_services],
+        result[:filled_slots]
+      )
+    end
 
-    nutritionists = nutritionists.where(id: filtered_nutritionist_ids) if params[:query].present?
-
-    nutritionists = NutritionistDistanceSorter
-                      .new(nutritionists, coordinates)
-                      .call(limit: 50)
-
-    filled_slots_by_nutritionist =
-      FilledSlotsFinder.new(nutritionists.map(&:id)).call
-
-    render json: nutritionists.map { |nutritionist|
-      serialize_nutritionist(nutritionist, filled_slots_by_nutritionist)
-    }, status: :ok
+    render json: serialized_results, status: :ok
   end
 
   private
 
-
-  def serialize_nutritionist(nutritionist, filled_slots)
+  def serialize_nutritionists_information(nutritionist, nutritionist_services, filled_slots)
     {
       id: nutritionist.id,
       name: nutritionist.name,
       email: nutritionist.email,
-      services: nutritionist.nutritionist_services.map do |nutritionist_service|
+      services: nutritionist_services.map do |nutritionist_service|
         service = nutritionist_service.service
         location = nutritionist_service.location
 
@@ -68,7 +60,7 @@ class Api::V1::Public::GuestController < ApplicationController
           }
         }
       end,
-    filled_slots: filled_slots.fetch(nutritionist.id, [])
+    filled_slots: filled_slots
     }
   end
 end
