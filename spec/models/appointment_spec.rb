@@ -20,13 +20,13 @@ RSpec.describe Appointment, type: :model do
     expect(subject).to be_valid
   end
 
-  it 'is not valid without a scheduled_date_time' do
-    subject.scheduled_date_time = ''
+  it 'is not valid without a start_date_time' do
+    subject.start_date_time = ''
     expect(subject).not_to be_valid
   end
 
-  it 'is not valid with a scheduled_date_time in the past' do
-    subject.scheduled_date_time = Time.now - 1.second
+  it 'is not valid with a start_date_time in the past' do
+    subject.start_date_time = Time.now - 1.second
     expect(subject).not_to be_valid
   end
 

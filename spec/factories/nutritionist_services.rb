@@ -13,5 +13,6 @@ FactoryBot.define do
   factory :nutritionist_service do
     nutritionist
     service
+    location
   end
 end

@@ -11,6 +11,8 @@
 #
 FactoryBot.define do
   factory :location do
-    address { Faker::Address.full_address }
+    address { 'Braga' }
+    latitude { 41.5510583 }
+    longitude { -8.4280045 }
   end
 end

@@ -14,6 +14,5 @@ FactoryBot.define do
     name { Faker::Commerce.product_name }
     price { Faker::Commerce.price(range: 10.0..100.0) }
     duration_in_minutes { [30, 45, 60, 90].sample }
-    location
   end
 end

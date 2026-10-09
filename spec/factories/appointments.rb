@@ -13,7 +13,8 @@
 #
 FactoryBot.define do
   factory :appointment do
-    scheduled_date_time { Time.now + 1.day }
+    start_date_time { Time.now + 1.day }
+    end_date_time { Time.now + 1.day + 30.minutes}
     status { 'pending' }
     guest
     nutritionist_service

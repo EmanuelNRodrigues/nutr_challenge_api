@@ -23,6 +23,8 @@ class Appointment < ApplicationRecord
   # Todo: Review if makes sense status to be a nil - pending, true - approved, false - rejected
   enum :status, { pending: 0, approved: 1, rejected: 2, canceled: 3 }
 
+  validates :status, presence: true
+
   validate :scheduled_times_are_valid, on: :create
 
   scope :with_time_overlapping, ->(nutritionist_id, start_date, end_date) {
@@ -54,8 +56,9 @@ class Appointment < ApplicationRecord
 
     unless end_date_time.present?
       errors.add(:end_date_time, "can't be blank")
-      return
     end
+
+    return unless start_date_time.present? && end_date_time.present?
 
     if start_date_time < MIN_TIME_TO_SCHEDULE
       errors.add(:start_date_time, "must be at least 1 hour from now")
