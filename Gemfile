@@ -34,7 +34,7 @@ gem "sidekiq"
 gem "geocoder" # allows you to add geocoding functionality to your Rails application
 
 group :development, :test do
-  gem "rspec-rails", "~> 8.0"
+  gem "rspec-rails", "~> 8.1"
   gem "factory_bot_rails"
   gem 'faker' # Creates fake data for testing
   gem "byebug"
